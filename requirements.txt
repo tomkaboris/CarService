@@ -1,0 +1,4 @@
+PyQt5==5.15.11
+fpdf2==2.8.1
+matplotlib==3.9.2
+pyinstaller==6.11.0
