@@ -29,8 +29,5 @@ This application requires Python and several libraries. Install the following de
 To install the required libraries, you can use the following pip commands:
 
 ```bash
-pip install PyQt5==5.15.11 fpdf2==2.8.1 matplotlib==3.9.2 pyinstaller==6.11.0 cx_Freeze==7.2.3
-```
-```bash
 pip install -r requirements.txt
 ```
