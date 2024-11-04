@@ -244,45 +244,46 @@ class MainWindow(QWidget):
         pdf = FPDF()
         pdf.add_page()
 
-        # Path to DejaVuSans font
+        # Load DejaVu font
         font_path = './DejaVuSans.ttf'
-        if not os.path.exists(font_path):
-            QMessageBox.warning(self, 'Error', f'Font file not found: {font_path}')
-            return
-        
-        # Add and set the DejaVuSans font for Unicode support
         pdf.add_font("DejaVu", "", font_path)
         pdf.set_font("DejaVu", '', 12)
 
-        # Title (using a larger font size for emphasis instead of bold)
-        pdf.set_font("DejaVu", '', 16)  # Larger size for title
-        pdf.cell(0, 10, f'Servis broj: {record_id}', ln=True, align='C')
-        pdf.ln(10)
+        # Title
+        pdf.set_font("DejaVu", '', 14)
+        pdf.cell(0, 10, f'Servis broj: {record_id}', ln=True, align='L')
+        pdf.ln(5)
 
-        # Table headers and data in a vertical format
-        headers = ['Broj', 'Datum', 'Broj šasije', 'Registarska oznaka', 'Marka/Model', 'Tip usluge', 'Opis rada', 'Cena']
-        pdf.set_font("DejaVu", '', 12)  # Reset to normal font size
-        
-        # Adding each field in a separate row, with labels on the left and values on the right
-        for header, value in zip(headers, record_data):
+        # Define headers and correct values to ensure they align correctly
+        headers = ['Broj', 'Datum', 'Broj šasije', 'Registarska oznaka', 'Marka/Model', 'Tip usluge', 'Cena']
+        values = [record_data[0], record_data[1], record_data[2], record_data[3], record_data[4], record_data[5], record_data[7]]  # Assuming record_data[7] is Cena and record_data[6] is Opis rada
+
+        # Adding main table data without "Opis rada"
+        for header, value in zip(headers, values):
+            pdf.set_font("DejaVu", '', 12)
             pdf.cell(50, 10, f"{header}:", border=1, align='L')
             pdf.cell(0, 10, str(value), border=1, align='L')
             pdf.ln()
 
-        # Move to near the bottom of the page for the signature area
-        pdf.ln(20)  # Adjust this space if needed
-        pdf.cell(0, 10, '', ln=True)  # Extra space before signature/stamp area
-        pdf.cell(140)  # Move to the right for alignment
-        
-        # Signature lines
+        # Separate section for "Opis rada"
+        pdf.ln(5)
+        pdf.set_font("DejaVu", "", 12)
+        pdf.cell(0, 10, 'Opis rada:', ln=True)
+        pdf.set_font("DejaVu", '', 12)
+        pdf.multi_cell(0, 10, record_data[6], border=1, align='L')  # Assuming "Opis rada" is at index 6
+
+        # Signature line
+        pdf.ln(20)
+        pdf.cell(140)
         pdf.cell(50, 10, '_________________________', 0, 1, 'R')
         pdf.cell(140)
         pdf.cell(50, 10, 'Potpis', 0, 1, 'R')
-    
+
         # Create a temporary file and open it in the system's PDF viewer
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
             pdf.output(tmp_file.name)
-            webbrowser.open(tmp_file.name)  # This opens the PDF in the default viewer
+            webbrowser.open(tmp_file.name)
+
 
     def delete_record(self, record_id):
         reply = QMessageBox.question(self, 'Potvrdi Brisanje',
