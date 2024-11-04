@@ -115,8 +115,8 @@ class MainWindow(QWidget):
         pdf = FPDF()
 
         # Dodavanje DejaVu fontova (obični i podebljani)
-        font_path_regular = os.path.join(os.path.dirname(__file__), './DejaVuSans.ttf')
-        font_path_bold = os.path.join(os.path.dirname(__file__), './DejaVuSans-Bold.ttf')
+        font_path_regular = './DejaVuSans.ttf'
+        font_path_bold = './DejaVuSans-Bold.ttf'
         if not os.path.exists(font_path_regular) or not os.path.exists(font_path_bold):
             QMessageBox.warning(self, 'Error', 'Nedostaje font fajl (DejaVuSans.ttf ili DejaVuSans-Bold.ttf)')
             return
@@ -245,7 +245,7 @@ class MainWindow(QWidget):
         pdf.add_page()
 
         # Path to DejaVuSans font
-        font_path = os.path.join(os.path.dirname(__file__), './DejaVuSans.ttf')
+        font_path = './DejaVuSans.ttf'
         if not os.path.exists(font_path):
             QMessageBox.warning(self, 'Error', f'Font file not found: {font_path}')
             return
@@ -256,7 +256,7 @@ class MainWindow(QWidget):
 
         # Title (using a larger font size for emphasis instead of bold)
         pdf.set_font("DejaVu", '', 16)  # Larger size for title
-        pdf.cell(0, 10, f'Service broj: {record_id}', ln=True, align='C')
+        pdf.cell(0, 10, f'Servis broj: {record_id}', ln=True, align='C')
         pdf.ln(10)
 
         # Table headers and data in a vertical format
