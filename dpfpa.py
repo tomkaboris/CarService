@@ -1,4 +1,4 @@
-# main.py
+# main
 import sys
 import os
 import matplotlib.pyplot as plt
@@ -9,13 +9,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPoint
 from database import (
-    connect, search_records, delete_records,
-    get_monthly_report, get_yearly_report
+    connect, search_records, delete_records, get_monthly_report,
+    get_yearly_report, insert_record, get_tip_usluge_list, get_record_by_id
 )
 from insert_form import InsertForm
 from fpdf import FPDF
 from datetime import datetime
-
+import tempfile
+import webbrowser
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -110,79 +111,78 @@ class MainWindow(QWidget):
             QMessageBox.information(self, 'Nema podataka', 'Nema podataka za selektovani period.')
             return
 
-        # Ask the user where to save the PDF file
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_path, _ = QFileDialog.getSaveFileName(self, "Sacuvaj PDF Izvestaj", "", "PDF Files (*.pdf)", options=options)
-        if not file_path:
-            return  # User cancelled the save dialog
-
-        # Create a PDF object
+        # Kreiranje PDF-a
         pdf = FPDF()
+
+        # Dodavanje DejaVu fontova (obični i podebljani)
+        font_path_regular = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans.ttf')
+        font_path_bold = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans-Bold.ttf')
+        if not os.path.exists(font_path_regular) or not os.path.exists(font_path_bold):
+            QMessageBox.warning(self, 'Error', 'Nedostaje font fajl (DejaVuSans.ttf ili DejaVuSans-Bold.ttf)')
+            return
+
+        pdf.add_font("DejaVu", "", font_path_regular)
+        pdf.add_font("DejaVu", "B", font_path_bold)
+
+        # Stranica 1 - Pie chart
         pdf.add_page()
-        pdf.set_font("Arial", 'B', 16)
-
-        # Add izvestaj title
+        pdf.set_font("DejaVu", 'B', 16)
         pdf.cell(0, 10, report_title, ln=True, align='C')
+        pdf.ln(10)
 
-        # Add date
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        pdf.set_font("Arial", '', 12)
-        pdf.cell(0, 10, f'Datum generisanja: {current_date}', ln=True, align='R')
-        pdf.ln(10)  # Add space
+        # Dodavanje pie chart-a
+        chart_path = self.create_chart_with_legend(report_data, report_title)
+        pdf.image(chart_path, x=10, y=40, w=pdf.w - 20)
 
-        # Create and insert the pie chart
-        chart_path = self.create_chart(report_data, report_title)
-        pdf.image(chart_path, x=10, y=None, w=pdf.w - 20)  # Adjust image size and position
-        pdf.ln(10)  # Add space after the chart
+        # Datum generisanja u donjem desnom uglu druge stranice
+        pdf.set_y(-15)
+        pdf.set_font("DejaVu", '', 10)
+        pdf.cell(0, 10, f'Datum generisanja: {datetime.now().strftime("%Y-%m-%d")}', align='R')
+        pdf.ln(10)
 
-        # Table headers (optional)
-        pdf.set_font("Arial", 'B', 12)
+        # Stranica 2 - Tabela sa podacima
+        # pdf.add_page()
+        pdf.set_font("DejaVu", 'B', 12)
         pdf.cell(60, 10, 'Tip usluge', border=1)
         pdf.cell(30, 10, 'Kolicina', border=1, align='R')
         pdf.cell(50, 10, 'Prosecna Cena', border=1, align='R')
         pdf.cell(50, 10, 'Ukupno Zaradjeno', border=1, align='R')
         pdf.ln()
 
-        # Table data (optional)
-        pdf.set_font("Arial", '', 12)
+        # Podaci u tabeli
+        pdf.set_font("DejaVu", '', 12)
         for row in report_data:
-            tip_usluge = row[0]
-            count = row[1]
-            avg_cena = round(row[2], 2)
-            sum_cena = row[3]
+            tip_usluge, count, avg_cena, sum_cena = row
             pdf.cell(60, 10, str(tip_usluge), border=1)
             pdf.cell(30, 10, str(count), border=1, align='R')
             pdf.cell(50, 10, f'{avg_cena:.2f}', border=1, align='R')
             pdf.cell(50, 10, str(sum_cena), border=1, align='R')
             pdf.ln()
 
-        # Save the PDF to the selected file path
-        try:
-            pdf.output(file_path)
-            QMessageBox.information(self, 'Success', f'Izvestaj je sacuvan uspesno {file_path}')
-        except Exception as e:
-            QMessageBox.warning(self, 'Error', f'Greska: {e}')
+        # Kreiranje privremenog fajla i otvaranje
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+            pdf.output(tmp_file.name)
+            webbrowser.open(tmp_file.name)
 
-        # Cleanup the chart image
+        # Brisanje pie chart slike
         if os.path.exists(chart_path):
             os.remove(chart_path)
 
-    def create_chart(self, report_data, report_title):
-        # Extract data for the pie chart
+    def create_chart_with_legend(self, report_data, report_title):
+        # Kreiranje pie chart-a
         tip_usluge = [row[0] for row in report_data]
         sum_cena = [row[3] for row in report_data]
 
-        # Create a pie chart
         plt.figure(figsize=(8, 8))
-        plt.pie(sum_cena, labels=tip_usluge, autopct='%1.1f%%', startangle=140)
-        plt.title(f'{report_title} - Prinosa')
-        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        plt.tight_layout()
+        wedges, texts, autotexts = plt.pie(sum_cena, autopct='%1.1f%%', startangle=140)
 
-        # Save the chart as an image file
+        # Dodavanje legende
+        plt.legend(wedges, tip_usluge, title="Tip usluge", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+        plt.axis('equal')  # Jednaki aspekt da bi pie chart bio krug
+
+        # Čuvanje slike pie chart-a
         chart_path = 'chart.png'
-        plt.savefig(chart_path)
+        plt.savefig(chart_path, bbox_inches='tight')  # `bbox_inches='tight'` da smanji praznine oko grafa
         plt.close()
 
         return chart_path
@@ -204,12 +204,85 @@ class MainWindow(QWidget):
 
             # Create the context menu
             menu = QMenu()
+            
+            # Delete action
             delete_action = QAction('Obrisi', self)
             delete_action.triggered.connect(lambda: self.delete_record(record_id))
             menu.addAction(delete_action)
+            
+            # Edit action
+            edit_action = QAction('Izmeni', self)
+            edit_action.triggered.connect(lambda: self.edit_record(record_id))
+            menu.addAction(edit_action)
+            
+            # Print action
+            print_action = QAction('Stampaj (PDF)', self)
+            print_action.triggered.connect(lambda: self.print_record(record_id))
+            menu.addAction(print_action)
 
             # Display the menu
             menu.exec_(self.table.viewport().mapToGlobal(position))
+
+    def edit_record(self, record_id):
+        # Fetch record details for editing
+        record_data = get_record_by_id(record_id)
+        if record_data:
+            self.insert_form = InsertForm(record_id=record_id, record_data=record_data)
+            self.insert_form.record_inserted.connect(self.search)
+            self.insert_form.show()
+        else:
+            QMessageBox.warning(self, 'Error', 'Record not found for editing.')
+
+    def print_record(self, record_id):
+        # Fetch the record data for printing
+        record_data = get_record_by_id(record_id)
+        if not record_data:
+            QMessageBox.warning(self, 'Error', 'Record not found for printing.')
+            return
+
+        # Create the PDF document
+        pdf = FPDF()
+        pdf.add_page()
+
+        # Path to DejaVuSans font
+        font_path = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans.ttf')
+        if not os.path.exists(font_path):
+            QMessageBox.warning(self, 'Error', f'Font file not found: {font_path}')
+            return
+        
+        # Add and set the DejaVuSans font for Unicode support
+        pdf.add_font("DejaVu", "", font_path)
+        pdf.set_font("DejaVu", '', 12)
+
+        # Title (using a larger font size for emphasis instead of bold)
+        pdf.set_font("DejaVu", '', 16)  # Larger size for title
+        pdf.cell(0, 10, f'Service broj: {record_id}', ln=True, align='C')
+        pdf.ln(10)
+
+        # Table headers and data in a vertical format
+        headers = ['Broj', 'Datum', 'Broj šasije', 'Registarska oznaka', 'Marka/Model', 'Tip usluge', 'Opis rada', 'Cena']
+        pdf.set_font("DejaVu", '', 12)  # Reset to normal font size
+        
+        # Adding each field in a separate row, with labels on the left and values on the right
+        for header, value in zip(headers, record_data):
+            pdf.cell(50, 10, f"{header}:", border=1, align='L')
+            pdf.cell(0, 10, str(value), border=1, align='L')
+            pdf.ln()
+
+        # Move to near the bottom of the page for the signature area
+        pdf.ln(20)  # Adjust this space if needed
+        pdf.cell(0, 10, '', ln=True)  # Extra space before signature/stamp area
+        pdf.cell(140)  # Move to the right for alignment
+        
+        # Signature lines
+        pdf.cell(50, 10, '_________________________', 0, 1, 'R')
+        pdf.cell(140)
+        pdf.cell(50, 10, 'Potpis', 0, 1, 'R')
+    
+        # Create a temporary file and open it in the system's PDF viewer
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+            pdf.output(tmp_file.name)
+            webbrowser.open(tmp_file.name)  # This opens the PDF in the default viewer
 
     def delete_record(self, record_id):
         reply = QMessageBox.question(self, 'Potvrdi Brisanje',

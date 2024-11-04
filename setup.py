@@ -4,7 +4,12 @@ from cx_Freeze import setup, Executable
 build_exe_options = {
     'packages': [],
     'includes': [],
-    'include_files': ['app_data.db','tb.ico','README.md'],
+    'include_files': [
+        ('app_data.db', 'app_data.db'),
+        ('tb.ico', 'tb.ico'),
+        ('README.md', 'README.md'),
+        ('dejavu-sans', 'dejavu-sans')
+    ],
 }
 
 base = None

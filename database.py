@@ -31,7 +31,7 @@ def connect():
     count = cursor.fetchone()[0]
     if count == 0:
         # Insert some default service types
-        tipovi_usluge = ['Servis', 'Popravka', 'Zamena delova', 'Dijagnostika', 'Gume', 'Klima', 'DPF']
+        tipovi_usluge = ['MEHANIKA', 'DPF', 'GUME', 'DOPUNA KLIME', 'SERVIS KLIME']
         cursor.executemany('INSERT INTO tip_usluge (naziv) VALUES (?)', [(tip,) for tip in tipovi_usluge])
     conn.commit()
     conn.close()
@@ -43,6 +43,18 @@ def insert_record(datum, broj_sasije, registarska_oznaka, marka_model, tip_uslug
         INSERT INTO records (datum, broj_sasije, registarska_oznaka, marka_model, tip_usluge_id, opis_rada, cena)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', (datum, broj_sasije, registarska_oznaka, marka_model, tip_usluge_id, opis_rada, cena))
+    conn.commit()
+    conn.close()
+
+def update_record(record_id, datum, broj_sasije, registarska_oznaka, marka_model, tip_usluge_id, opis_rada, cena):
+    """Update an existing record by its ID."""
+    conn = sqlite3.connect('app_data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE records
+        SET datum = ?, broj_sasije = ?, registarska_oznaka = ?, marka_model = ?, tip_usluge_id = ?, opis_rada = ?, cena = ?
+        WHERE id = ?
+    ''', (datum, broj_sasije, registarska_oznaka, marka_model, tip_usluge_id, opis_rada, cena, record_id))
     conn.commit()
     conn.close()
 
@@ -115,3 +127,17 @@ def get_tip_usluge_list():
     results = cursor.fetchall()
     conn.close()
     return results
+
+def get_record_by_id(record_id):
+    """Retrieve a single record by its ID."""
+    conn = sqlite3.connect('app_data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT records.id, datum, broj_sasije, registarska_oznaka, marka_model, tip_usluge.naziv AS tip_usluge, opis_rada, cena
+        FROM records
+        JOIN tip_usluge ON records.tip_usluge_id = tip_usluge.id
+        WHERE records.id = ?
+    ''', (record_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result

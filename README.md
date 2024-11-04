@@ -21,7 +21,6 @@ This application requires Python and several libraries. Install the following de
   - `PyQt5==5.15.11`: for the graphical user interface
   - `fpdf2==2.8.1`: for PDF generation
   - `matplotlib==3.9.2`: for chart generation
-  - `pyinstaller==6.11.0`: for creating standalone executables
   - `cx_Freeze==7.2.3`: for freezing the Python application into a Windows executable
 
 ### Installation
@@ -30,4 +29,12 @@ To install the required libraries, you can use the following pip commands:
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Build
+
+To install the required libraries, you can use the following pip commands:
+
+```bash
+python setup.py build
 ```
