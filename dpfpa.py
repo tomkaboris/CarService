@@ -115,8 +115,8 @@ class MainWindow(QWidget):
         pdf = FPDF()
 
         # Dodavanje DejaVu fontova (obični i podebljani)
-        font_path_regular = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans.ttf')
-        font_path_bold = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans-Bold.ttf')
+        font_path_regular = os.path.join(os.path.dirname(__file__), './DejaVuSans.ttf')
+        font_path_bold = os.path.join(os.path.dirname(__file__), './DejaVuSans-Bold.ttf')
         if not os.path.exists(font_path_regular) or not os.path.exists(font_path_bold):
             QMessageBox.warning(self, 'Error', 'Nedostaje font fajl (DejaVuSans.ttf ili DejaVuSans-Bold.ttf)')
             return
@@ -245,7 +245,7 @@ class MainWindow(QWidget):
         pdf.add_page()
 
         # Path to DejaVuSans font
-        font_path = os.path.join(os.path.dirname(__file__), './dejavu-sans/DejaVuSans.ttf')
+        font_path = os.path.join(os.path.dirname(__file__), './DejaVuSans.ttf')
         if not os.path.exists(font_path):
             QMessageBox.warning(self, 'Error', f'Font file not found: {font_path}')
             return
