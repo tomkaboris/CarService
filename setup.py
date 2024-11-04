@@ -13,7 +13,7 @@ if sys.platform == 'win32':
 
 setup(
     name='dpfpa',
-    version='1.0',
+    version='1.1',
     description='Boris Tomka Application',
     options={'build_exe': build_exe_options},
     executables=[Executable(
